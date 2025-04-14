@@ -1,0 +1,15 @@
+
+[Unit]
+Description=Django manage.py Service
+After=network.target
+
+[Service]
+User=nilesh
+WorkingDirectory=//home/nilesh/mega_meal/
+ExecStart=/home/nilesh/venv/bin/python manage.py runserver 0.0.0.0:8000
+Environment=DJANGO_SETTINGS_MODULE=mega_meal.settings
+Environment=PYTHONUNBUFFERED=1
+Restart=always
+
+[Install]
+WantedBy=multi-user.target

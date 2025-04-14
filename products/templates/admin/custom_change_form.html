@@ -1,0 +1,7 @@
+{% extends 'admin/change_form.html' %}
+{% load static %}
+
+{% block submit_buttons_bottom %}
+    {{block.super}}
+    <input type="submit" value="Send Email" name="_send_email" class="button">
+{% endblock%}

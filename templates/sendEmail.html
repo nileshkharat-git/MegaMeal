@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    
+</head>
+<body>
+    <h1>Order Confirmed</h1>
+    <h2>Order summary</h2>
+    <p>Customer Name: {{order.customer_name}}</p>
+    <p>Shipping Address: {{order.shipping_address}}</p>
+    <table border="1" text-align="center">
+        <thead>
+            <tr>
+                <th>Product</th>
+                <th>Quantity</th>
+                <th>Price</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for item in items%}
+                <td>{{item.product.name}}</td>
+                <td>{{item.quantity}}</td>
+                <td>{{item.price}} &#8377;</td>
+            {% endfor %}
+            <tr>
+                <td>Subtotal</td>
+                <td colspan="2" text-align="right">{{order.subtotal}} &#8377;</td>
+            </tr>
+            <tr>
+                <td>Delivery charge</td>
+                <td colspan="2" text-align="right">{{order.delivery_charge}} &#8377;</td>
+            </tr>
+            <tr>
+                <td>Discount</td>
+                <td colspan="2" text-align="right">{{order.discount}} &#8377;</td>
+            </tr>
+            <tr>
+                <td>Total</td>
+                <td colspan="2" text-align="right">{{order.total}} &#8377;</td>
+            </tr>
+        </tbody>
+    </table>   
+</body>
+</html>
