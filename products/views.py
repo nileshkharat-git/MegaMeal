@@ -1,11 +1,14 @@
 import os
 import json
 import pandas as pd
+import requests
+import base64
 
 from django.db.models import Sum
 from django.conf import settings
 from django.http import FileResponse
 from django.db.models import Q
+from django.core.files.base import ContentFile
 from rest_framework.decorators import api_view
 from rest_framework.viewsets import ModelViewSet
 from rest_framework.permissions import IsAuthenticated
@@ -258,16 +261,8 @@ def change_order_status(request):
     
 
 class CategoryViewSet(ModelViewSet):
-    queryset = Category.objects.all()
+    queryset = Category.objects.filter(is_deleted=False)
     serializer_class = CategorySerializer
-
-    def retrieve(self, request, **kwargs):
-        category = Category.objects.get(id=kwargs['pk'])
-
-        products_data = Product.objects.filter(category=category.id)
-        products = ProductSerializer(products_data, many=True)
-
-        return Response({'id':category.id, 'name':category.name, 'products':products.data})
     
     def create(self, request):
         category_name = request.data['name']
@@ -319,3 +314,34 @@ class ProductViewSet(ModelViewSet):
             return Response({'id':category.id, 'name':category.name, 'products':products.data})
         
         return super().list(request, *args, **kwargs)
+
+@api_view(['POST'])
+def upload_image_from_url(request):
+    links = request.data.get('image_url')
+    format_type = request.data.get('format_type')
+    try:
+        if type(links) != list:
+            responce = requests.get(links)
+            product = Product.objects.get(id=7)
+            with open(f'{product.name}_image.{format_type}', 'wb+') as file:
+                file.write(responce.content)
+                product.image.save(file.name, ContentFile(responce.content), save=True)
+                encoded_image = base64.b64encode(responce.content)
+                product.base64_image = encoded_image
+                product.save()
+                return Response({'message':'image uploaded'})
+        else:
+            products = Product.objects.all()[:len(links)]
+            for i in range(len(links)+1):
+                product = products[i]
+                image = requests.get(links[i])
+                with open(f'{product.name}_image.{format_type}', 'wb+') as file:
+                    file.write(image.content)
+                    product.image.save(file.name, ContentFile(image.content), save=True)
+                    encoded_image = base64.b64encode(image.content)
+                    product.base64_image = encoded_image
+                    product.save()
+            return Response({'message':'images uploaded'})
+                    
+    except Exception as e:
+        return Response(str(e))
