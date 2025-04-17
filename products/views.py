@@ -314,6 +314,32 @@ class ProductViewSet(ModelViewSet):
             return Response({'id':category.id, 'name':category.name, 'products':products.data})
         
         return super().list(request, *args, **kwargs)
+    
+    def partial_update(self, request, *args, **kwargs):
+        try:
+            if 'image' in request.data.keys():
+                image = request.FILES['image']
+                if image.size >= 100000:
+                    return Response({'message':'Image exceed size limit!'})
+                image_bytes = image.read()
+                product = Product.objects.get(id=kwargs['pk'])
+                with open(f'{product.name}_image.jpg', 'wb+') as file:
+                    file.write(image_bytes)
+                    product.image.save(file.name, ContentFile(image_bytes), save=True)
+                    encoded_image = base64.b64encode(image_bytes)
+                    product.base64_image = encoded_image
+                    product.save()
+                    os.remove(file.name)
+                    request.data.pop('image')
+            else:
+                return Response({'message':'Invalid data'})
+            return super().partial_update(request, *args, **kwargs)
+        
+        except Product.DoesNotExist:
+            return Response({'error':'product not found'})
+        except Exception as e:
+            return Response({'error':str(e)})
+
 
 @api_view(['POST'])
 def upload_image_from_url(request):
