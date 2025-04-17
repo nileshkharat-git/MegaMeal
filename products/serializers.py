@@ -1,51 +1,97 @@
 from datetime import datetime
-from django.utils import timezone
 from rest_framework import serializers
 
-from users.models import StoreStatus
+from users.models import StoreStatus, StoreTime
 from users.serializers import CustomUserSerializer
 from products.models import Order, OrderItem, Product, Payment, Category
 
 class CategorySerializer(serializers.ModelSerializer):
+    products = serializers.SerializerMethodField()
+
     class Meta:
         model = Category
-        fields = ('id', 'name')
+        fields = ('id', 'name', 'products')
     
+    def get_products(self, obj):
+        products_data = obj.products.all()
+        products = ProductSerializer(products_data, many=True)
+        return products.data
+
 class ProductSerializer(serializers.ModelSerializer):
     category = serializers.SerializerMethodField()
     unit_price = serializers.CharField(source='price')
     status = serializers.SerializerMethodField('get_status')
-
+    image = serializers.ImageField()
     class Meta:
         model = Product
-        fields = ('id', 'name', 'description', 'unit_price', 'category', 'status')
+        fields = ('id', 'name', 'description', 'unit_price', 'category', 'status', 'image')
 
     def get_category(self, obj):
         return obj.category.all()[0].name
 
     def get_status(self, obj):
-        current_time = timezone.localtime().time()
+        today = datetime.today().strftime('%A')
         try:
             store_status = StoreStatus.objects.get(id=1)
+            store_time = StoreTime.objects.get(day = today.upper())
             category = obj.category.all()[0]
-
-            if obj.open_time <= current_time <= obj.close_time:
-                if category.open_time <= current_time <= category.close_time:
-                    if store_status.is_open:
-                        return 'Product is available'
+            is_product_available = False
+            
+            if obj.open_time or obj.close_time:
+                is_product_available = True
+           
+            if store_status.is_open:
+                open_time = ''
+                close_time = ''
+                if is_product_available:
+                    if obj.open_time:
+                        open_time = obj.open_time
+                    elif category.open_time:
+                        open_time = category.open_time
+                    elif store_time.open_time:
+                        open_time = store_time.open_time
                     else:
-                        return 'Store is closed'
-                else:
-                    if store_status.is_open:
-                        return 'Products of this category is not available at this movement'
+                        open_time = '-'
+                    
+                    if obj.close_time:
+                        close_time = obj.close_time
+                    elif category.close_time:
+                        close_time = category.close_time
+                    elif store_time.close_time:
+                        close_time = store_time.close_time
                     else:
-                        return 'Store is closed'
-            else:
-                if not store_status.is_open:
-                    return 'Store is closed'
+                        close_time = '-'
                 
-                return f'Product is available only batween {obj.open_time.strftime("%I:%M %p")} to {obj.close_time.strftime("%I:%M %p")}'
-              
+                else:
+                    if category.open_time:
+                        open_time = category.open_time
+                    elif store_time.open_time:
+                        open_time = store_time.open_time
+                    else:
+                        open_time = '-'
+                    
+                    if category.close_time:
+                        close_time = category.close_time
+                    elif store_time.close_time:
+                        close_time = store_time.close_time
+                    else:
+                        close_time = '-'
+                
+                if open_time != '-' and close_time == '-':
+                    return f'product is available from {open_time.strftime("%I:%M %p")}'
+                
+                elif open_time == '-' and close_time != '-':
+                    return f'product is available till {close_time.strftime("%I:%M %p")}'
+                
+                elif open_time == '-' and close_time == '-':
+                    return f'product is available'
+
+                return \
+                    f'product is available between {open_time.strftime("%I:%M %p")} to {close_time.strftime("%I:%M %p")}'
+
+            else:
+                return 'Store is closed'
+                
         except Exception as e:
             return str(e)
     
@@ -111,4 +157,3 @@ class CategoryExcelSerializer(serializers.ModelSerializer):
             return ""
    
 
-    
