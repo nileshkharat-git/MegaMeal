@@ -1,13 +1,40 @@
 from django.db import models
-from users.models import CustomUser
 
-class Category(models.Model):
+from users.models import CustomUser, SoftDeleteModel
+
+class Category(SoftDeleteModel):
     name = models.CharField(max_length=255)
-    open_time = models.TimeField(null=True)
-    close_time = models.TimeField(null=True)
+    open_time = models.TimeField(null=True, blank=True)
+    close_time = models.TimeField(null=True, blank=True)
+    sequence_number = models.PositiveIntegerField(blank=True, null=True)
+    subcategory_name = models.CharField(max_length=255, null=True, blank=True)
+    subcategory_sequence_number = models.PositiveIntegerField(unique=True, blank=True, null=True)
 
+    class Meta:
+        constraints = (
+            models.UniqueConstraint(fields=('name', 'sequence_number'),\
+                                    name='unique_name_sequence_number',\
+                                    condition=models.Q(is_deleted=False)),
+        )
+
+    def save(self, *args, **kwargs):
+        if self.sequence_number is None:
+            last = Category.objects.order_by('-sequence_number').first()
+            self.sequence_number = (last.sequence_number) + 1 if last else 1    
+        
+        if self.subcategory_sequence_number is None and self.subcategory_name != None:
+            subcategory_last_number = Category.objects.order_by('-subcategory_sequence_number')\
+                                [1].subcategory_sequence_number
+            self.subcategory_sequence_number = \
+                     subcategory_last_number + 1 if subcategory_last_number != None else 1
+                        
+        return super().save(*args, **kwargs)
+    
     def __str__(self):
-        return self.name
+        if self.subcategory_name:
+            return f'{self.name}--->{self.subcategory_name}'
+        else:
+            return self.name
     
 class Product(models.Model):
     name = models.CharField(max_length=255)
@@ -15,9 +42,9 @@ class Product(models.Model):
     price = models.DecimalField(max_digits=10, decimal_places=2)
     category = models.ManyToManyField(Category, related_name='products')
     image = models.ImageField(blank=True, null=True, upload_to='product_images')
-    open_time = models.TimeField(null=True)
-    close_time = models.TimeField(null=True)
-
+    open_time = models.TimeField(null=True, blank=True)
+    close_time = models.TimeField(null=True, blank=True)
+    base64_image = models.TextField(blank=True, null=True)
     def __str__(self):
         return self.name
     

@@ -10,7 +10,10 @@ class ProductAdmin(admin.ModelAdmin):
 
 class CategoryAdmin(admin.ModelAdmin):
     model = Category
-    list_display = ('id','name', 'open_time', 'close_time')
+    list_display = ('id','name', 'open_time', 'close_time', 'is_deleted',\
+                     'sequence_number','subcategory_name','subcategory_sequence_number')
+
+    ordering = ('-sequence_number', )
 
 class OrderAdmin(admin.ModelAdmin):
     model = Order
@@ -35,7 +38,7 @@ class OrderAdmin(admin.ModelAdmin):
         send_order_report_email(orders=queryset,recipient_list=recipient_list)
 
     @admin.action(description='Send email to customers')  
-    def send_email_to_customers(self, request, queryset):
+    def send_email_to_customers(self, queryset):
         for order in queryset:
              send_email_pdf(order=order, items=order.items.all(),\
                              recipient_list=[order.placed_by.email], subject='Order invoice')
