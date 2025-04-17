@@ -1,7 +1,9 @@
 import os
+import base64
 from django.conf import settings
 from django.core.mail import EmailMessage
 from django.template.loader import render_to_string
+from django.core.files.base import ContentFile
 
 def genrate_html_file(order, items):
     items_rows = "".join(f"<tr><td>{item.product.name}</td><td>{item.quantity}</td><td>{item.price} &#8377;</td></tr>" for item in items)
@@ -133,3 +135,12 @@ def send_order_report_email(orders, recipient_list):
 
     email.send()
 
+def save_image_with_base64(product, image, format_type='jpeg'):
+    with open(f'{product.name}_image.{format_type}', 'wb+') as file:
+        file.write(image)
+        product.image.save(file.name, ContentFile(image), save=True)
+        encoded_image = base64.b64encode(image)
+        product.base64_image = encoded_image
+        product.save()
+        os.remove(file.name)
+        return True
