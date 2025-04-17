@@ -24,6 +24,7 @@ from products.models import Order, OrderItem, Product, Payment,Category
 from products.signals import order_confirmed
 from products.filters import OrderFilter
 from products.paginations import CustomPagination
+from products.utils import save_image_with_base64
 from products.serializers import OrderSerializer, ProductSerializer,\
                                  ProductExcelSerializers,CategoryExcelSerializer, \
                                  CategorySerializer
@@ -319,18 +320,13 @@ class ProductViewSet(ModelViewSet):
         try:
             if 'image' in request.data.keys():
                 image = request.FILES['image']
-                if image.size >= 100000:
+                print(image.size)
+                if image.size >= 1000000:
                     return Response({'message':'Image exceed size limit!'})
                 image_bytes = image.read()
                 product = Product.objects.get(id=kwargs['pk'])
-                with open(f'{product.name}_image.jpg', 'wb+') as file:
-                    file.write(image_bytes)
-                    product.image.save(file.name, ContentFile(image_bytes), save=True)
-                    encoded_image = base64.b64encode(image_bytes)
-                    product.base64_image = encoded_image
-                    product.save()
-                    os.remove(file.name)
-                    request.data.pop('image')
+                save_image_with_base64(product=product, image=image_bytes)
+                request.data.pop('image')
             else:
                 return Response({'message':'Invalid data'})
             return super().partial_update(request, *args, **kwargs)
@@ -348,25 +344,15 @@ def upload_image_from_url(request):
     try:
         if type(links) != list:
             responce = requests.get(links)
-            product = Product.objects.get(id=7)
-            with open(f'{product.name}_image.{format_type}', 'wb+') as file:
-                file.write(responce.content)
-                product.image.save(file.name, ContentFile(responce.content), save=True)
-                encoded_image = base64.b64encode(responce.content)
-                product.base64_image = encoded_image
-                product.save()
-                return Response({'message':'image uploaded'})
+            product = Product.objects.get(id=6)
+            save_image_with_base64(product=product, image=responce.content, format_type=format_type)
+            return Response({'message':'image uploaded'})
         else:
             products = Product.objects.all()[:len(links)]
             for i in range(len(links)+1):
                 product = products[i]
                 image = requests.get(links[i])
-                with open(f'{product.name}_image.{format_type}', 'wb+') as file:
-                    file.write(image.content)
-                    product.image.save(file.name, ContentFile(image.content), save=True)
-                    encoded_image = base64.b64encode(image.content)
-                    product.base64_image = encoded_image
-                    product.save()
+                save_image_with_base64(product=product, image=image.content, format_type=format_type)
             return Response({'message':'images uploaded'})
                     
     except Exception as e:
