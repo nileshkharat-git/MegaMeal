@@ -15,4 +15,5 @@ urlpatterns = [
     path('payment_webhook/', views.payment_webhook, name='payment_webhook'),
     path('excel_download/', views.product_data_download),
     path('excel_upload/', views.product_data_upload),
+    path('image_upload/', views.upload_image_from_url),
 ] + router.urls
