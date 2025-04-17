@@ -8,7 +8,7 @@ class GroupAdmin(admin.ModelAdmin):
     list_filter = ('is_active', )
 
 
-class UserAdmin(admin.ModelAdmin):
+class CustomUserAdmin(admin.ModelAdmin):
     list_display = ('id','username', 'group', 'is_active')
     list_filter = ('group', 'is_active')
 
@@ -27,7 +27,7 @@ class StoreStatusAdmin(admin.ModelAdmin):
 class StoreStatusLogsAdmin(admin.ModelAdmin):
     list_display = ('id', 'log_message', 'response_status_code', 'log_time')
 
-admin.site.register(CustomUser, UserAdmin)
+admin.site.register(CustomUser, CustomUserAdmin)
 admin.site.register(CustomGroup, GroupAdmin)
 admin.site.register(ExpiringToken)
 admin.site.register(EmailOtp)
