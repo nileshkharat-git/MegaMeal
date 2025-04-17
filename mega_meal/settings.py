@@ -88,11 +88,14 @@ WSGI_APPLICATION = 'mega_meal.wsgi.application'
 
 # Database
 # https://docs.djangoproject.com/en/5.1/ref/settings/#databases
-
+    
 DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
+     "default":{
+        "ENGINE": "django.db.backends.postgresql",
+        "NAME": "mega_meal",
+        "USER":"nilesh",  
+        "PASSWORD":"1234",
+        "HOST":"localhost"
     }
 }
 
