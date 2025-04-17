@@ -8,7 +8,7 @@ from users.managers import SoftDeleteManager
 
 class SoftDeleteModel(models.Model):
     is_deleted = models.BooleanField(default=False)
-    deleted_by = models.ForeignKey("CustomUser",null=True, blank=True, related_query_name='removed by', on_delete=models.CASCADE)
+    deleted_by = models.ForeignKey("users.CustomUser",null=True, blank=True, related_query_name='removed by', on_delete=models.CASCADE)
     deleted_at = models.DateTimeField(null=True, blank=True)
     
     objects = SoftDeleteManager()
